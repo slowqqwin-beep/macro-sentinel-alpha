@@ -20,14 +20,30 @@ def fetch_shibor() -> pd.DataFrame:
 
 @st.cache_data(ttl=3600)
 def fetch_cb_open_market() -> pd.DataFrame:
-    """获取央行公开市场操作"""
-    # 正确的函数名是 macro_china_gksccz
-    df = ak.macro_china_gksccz()
-    if df is not None and not df.empty:
-        df["操作日期"] = pd.to_datetime(df["操作日期"])
-        df["交易量"] = pd.to_numeric(df["交易量"], errors="coerce")
-        df["中标利率"] = pd.to_numeric(df["中标利率"], errors="coerce")
-    return df
+    """获取央行公开市场操作（含容错：依次尝试多个可能的接口名称）"""
+    candidates = [
+        "macro_china_gksccz",            # 新版接口名称
+        "macro_china_open_market_operation",  # 旧版接口名称
+    ]
+    for func_name in candidates:
+        try:
+            func = getattr(ak, func_name, None)
+            if func is None:
+                continue
+            df = func()
+            if df is not None and not df.empty:
+                # 统一列名处理
+                if "操作日期" in df.columns:
+                    df["操作日期"] = pd.to_datetime(df["操作日期"])
+                if "交易量" in df.columns:
+                    df["交易量"] = pd.to_numeric(df["交易量"], errors="coerce")
+                if "中标利率" in df.columns:
+                    df["中标利率"] = pd.to_numeric(df["中标利率"], errors="coerce")
+                return df
+        except Exception:
+            continue
+    st.warning("⚠️ 央行公开市场操作接口暂时不可用，请稍后重试")
+    return pd.DataFrame()
 
 
 @st.cache_data(ttl=3600)
