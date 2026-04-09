@@ -2,10 +2,10 @@
 数据拉取模块 — 基于AkShare获取中国流动性核心指标
 """
 import akshare as ak
-from akshare.forex import forex_hist_em
 import pandas as pd
 from datetime import datetime
 import streamlit as st
+
 
 @st.cache_data(ttl=3600)
 def fetch_shibor() -> pd.DataFrame:
@@ -17,6 +17,7 @@ def fetch_shibor() -> pd.DataFrame:
         df["date"] = pd.to_datetime(df["date"])
     return df
 
+
 @st.cache_data(ttl=3600)
 def fetch_cb_open_market() -> pd.DataFrame:
     """获取央行公开市场操作"""
@@ -27,6 +28,7 @@ def fetch_cb_open_market() -> pd.DataFrame:
         df["中标利率"] = pd.to_numeric(df["中标利率"], errors="coerce")
     return df
 
+
 @st.cache_data(ttl=3600)
 def fetch_money_supply() -> pd.DataFrame:
     """获取货币供应量"""
@@ -35,30 +37,36 @@ def fetch_money_supply() -> pd.DataFrame:
         df = df[["月份", "M2同比", "M1同比", "M0同比"]]
     return df
 
+
 @st.cache_data(ttl=3600)
 def fetch_forex_reserve() -> pd.DataFrame:
     """获取外汇储备"""
     return ak.macro_china_forex_reserve()
 
+
 @st.cache_data(ttl=3600)
 def fetch_cnh_spot() -> pd.DataFrame:
     """获取USD/CNH汇率"""
-    df = forex_hist_em(symbol="USDCNH")
+    # 使用 AkShare 的 currency_hist 函数（无需特殊导入）
+    end_date = datetime.now().strftime("%Y-%m-%d")
+    df = ak.currency_hist(symbol="USDCNH", period="daily", start_date="2024-01-01", end_date=end_date)
     if df is not None and not df.empty:
         df = df.rename(columns={
             "日期": "date",
-            "最新价": "close",
-            "今开": "open",
+            "收盘": "close",
+            "开盘": "open",
             "最高": "high",
             "最低": "low"
         })
         df["date"] = pd.to_datetime(df["date"])
     return df
 
+
 @st.cache_data(ttl=3600)
 def fetch_cnh_hibor() -> pd.DataFrame:
     """获取CNH HIBOR"""
     return ak.macro_china_hk_rate_of_interest()
+
 
 @st.cache_data(ttl=3600)
 def fetch_social_financing() -> pd.DataFrame:
