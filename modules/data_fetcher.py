@@ -21,7 +21,8 @@ def fetch_shibor() -> pd.DataFrame:
 @st.cache_data(ttl=3600)
 def fetch_cb_open_market() -> pd.DataFrame:
     """获取央行公开市场操作"""
-    df = ak.macro_china_open_market_operation()
+    # 正确的函数名是 macro_china_gksccz
+    df = ak.macro_china_gksccz()
     if df is not None and not df.empty:
         df["操作日期"] = pd.to_datetime(df["操作日期"])
         df["交易量"] = pd.to_numeric(df["交易量"], errors="coerce")
@@ -47,14 +48,13 @@ def fetch_forex_reserve() -> pd.DataFrame:
 @st.cache_data(ttl=3600)
 def fetch_cnh_spot() -> pd.DataFrame:
     """获取USD/CNH汇率"""
-    # 使用 AkShare 的 currency_hist 函数（无需特殊导入）
-    end_date = datetime.now().strftime("%Y-%m-%d")
-    df = ak.currency_hist(symbol="USDCNH", period="daily", start_date="2024-01-01", end_date=end_date)
+    # 正确的函数名是 forex_hist_em
+    df = ak.forex_hist_em(symbol="USDCNH")
     if df is not None and not df.empty:
         df = df.rename(columns={
             "日期": "date",
-            "收盘": "close",
-            "开盘": "open",
+            "最新价": "close",
+            "今开": "open",
             "最高": "high",
             "最低": "low"
         })
